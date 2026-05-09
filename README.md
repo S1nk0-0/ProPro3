@@ -40,16 +40,11 @@ PROCEDIMIENTO insertarPalabra(palabra, id)
 PROCEDIMIENTO insertarString(texto, id)
 
     nodoActual ← raiz
-
     PARA cada caracter c EN texto HACER
-
         SI c no existe en hijos de nodoActual ENTONCES
             crear nuevo nodo
             agregarlo a hijos
-        FIN SI
-
         nodoActual ← hijo correspondiente a c
-
         agregar id al conjunto movieIds del nodoActual
         
 Ejemplo
