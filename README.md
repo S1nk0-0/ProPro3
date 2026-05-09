@@ -62,21 +62,27 @@ Para la palabra:
 Se insertan los siguientes sufijos:
 
 barco
+
 arco
+
 rco
+
 co
+
 o
 
 ## 3. Estructura de datos: Suffix Trie
 El proyecto utiliza un Suffix Trie para permitir búsquedas rápidas de substrings dentro de títulos, géneros, directores, reparto y sinopsis.
 
 ### Nodo del Trie
-struct TrieNode {
+
+    struct TrieNode {
     unordered_map<char, TrieNode*> children;
     unordered_set<int> movieIds;
-};
+    };
 
 ### Componentes
+
 children
 
 Mapa que almacena las conexiones hacia los nodos hijos.
@@ -98,26 +104,53 @@ La consulta recorre el árbol carácter por carácter:
 Si el camino existe → devuelve películas relacionadas.
 Si no existe → no hay coincidencias.
 Complejidad
-Inserción
-O(n
-2
-)
 
-donde n es la longitud de la palabra.
+- Inserción: `O(n²)`
+- Búsqueda: `O(m)`
 
-Búsqueda
-O(m)
+Donde:
+- `n` = longitud de la palabra
+- `m` = longitud del query
 
-donde m es la longitud del query.
-
-Ventajas
+### Ventajas
 Búsqueda rápida de substrings.
 Coincidencias parciales eficientes.
 Mejora la experiencia de búsqueda.
-Desventajas
+
+### Desventajas
 Alto consumo de memoria.
 Mayor costo de inserción comparado con un Trie normal.
 
 
 ## 4. Interfaz del programa
+
+El programa funciona mediante una interfaz de consola interactiva.
+
+### Inicio del sistema
+
+```txt
+=== Streaming Platform ===
+```
+
+### Ejemplo de búsqueda
+
+Entrada:
+
+```txt
+matrix
+```
+
+Resultado:
+
+```txt
+[1] The Matrix (1999)
+[2] The Matrix Reloaded (2003)
+[3] The Matrix Revolutions (2003)
+```
+
+### Flujo general
+
+```txt
+CSV → Preprocesamiento → Suffix Trie → Búsqueda → Ranking → Resultados
+```
 
