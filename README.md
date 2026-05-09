@@ -17,6 +17,7 @@ El sistema realiza un proceso de limpieza y normalización de los datos antes de
 4. Eliminación de palabras irrelevantes
 5. Validación de títulos
 6. Indexación
+
 Ejemplo
 Entrada original:
 "Spider-Man: Homecoming!"
