@@ -35,7 +35,6 @@ PROCEDIMIENTO insertarPalabra(palabra, id)
     PARA i DESDE 0 HASTA longitud(palabra)-1 HACER
         sufijo ← substring(palabra, i)
         insertarString(sufijo, id)
-    FIN PARA
 
 ### Inserción de un sufijo:
 PROCEDIMIENTO insertarString(texto, id)
@@ -61,15 +60,11 @@ Para la palabra:
 
 Se insertan los siguientes sufijos:
 
-barco
-
-arco
-
-rco
-
-co
-
-o
+- barco
+- arco
+- rco
+- co
+- o
 
 ## 3. Estructura de datos: Suffix Trie
 El proyecto utiliza un Suffix Trie para permitir búsquedas rápidas de substrings dentro de títulos, géneros, directores, reparto y sinopsis.
