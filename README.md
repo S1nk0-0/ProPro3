@@ -103,14 +103,13 @@ Donde:
 - `m` = longitud del query
 
 ### Ventajas
-Búsqueda rápida de substrings.
-Coincidencias parciales eficientes.
-Mejora la experiencia de búsqueda.
+- Búsqueda rápida de substrings.
+- Coincidencias parciales eficientes.
+- Mejora la experiencia de búsqueda.
 
 ### Desventajas
-Alto consumo de memoria.
-Mayor costo de inserción comparado con un Trie normal.
-
+- Alto consumo de memoria.
+- Inserción más costosa que un Trie tradicional.
 
 ## 4. Interfaz del programa
 
