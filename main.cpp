@@ -26,10 +26,8 @@ SuffixTrie    titleTrie;      // solo titulos (substrings)
 unordered_map<string, unordered_set<int>> wordTitleIndex; // palabra exacta → IDs
 
 /*
-=====================================================================
-    PRE-PROCESAMIENTO: eliminamos los chars que no nos sirven y
-                       separamos las palabras en un vector
-=====================================================================
+PRE-PROCESAMIENTO: eliminamos los chars que no nos
+sirven y separamos las palabras en un vector
 */
 vector<string> preprocesar(const string& texto) {
     vector<string> tokens;
@@ -47,29 +45,7 @@ vector<string> preprocesar(const string& texto) {
     return tokens;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  PARA LEER BIEN EL CSV
-//  maneja campos entre comillas con comas y saltos de linea
-// ─────────────────────────────────────────────────────────────
-vector<string> revisarCSV(const string& linea) {
-    vector<string> campos;
-    string campo;
-    bool enComillas = false;
 
-    for (size_t i = 0; i < linea.size(); i++) {
-        char c = linea[i];
-        if (c == '"') {
-            enComillas = !enComillas;
-        } else if (c == ',' && !enComillas) {
-            campos.push_back(campo);
-            campo.clear();
-        } else if (c != '\r') {
-            campo += c;
-        }
-    }
-    campos.push_back(campo);
-    return campos;
-}
 
 // lee una fila completa del CSV aunque el plot tenga saltos de linea
 // maneja comillas escapadas ("") para no unir filas por error
@@ -96,6 +72,28 @@ bool leerFilaCSV(ifstream& file, string& linea) {
     return true;
 }
 
+//  PARA LEER BIEN EL CSV
+//  maneja campos entre comillas con comas y saltos de linea
+vector<string> revisarCSV(const string& linea) {
+    vector<string> campos;
+    string campo;
+    bool enComillas = false;
+
+    for (size_t i = 0; i < linea.size(); i++) {
+        char c = linea[i];
+        if (c == '"') {
+            enComillas = !enComillas;
+        } else if (c == ',' && !enComillas) {
+            campos.push_back(campo);
+            campo.clear();
+        } else if (c != '\r') {
+            campo += c;
+        }
+    }
+    campos.push_back(campo);
+    return campos;
+}
+
 bool esTituloValido(const string& t) {
     if (t.empty() || t.size() > 150) return false;
     // detectar concatenaciones tipo "TheThe": minuscula seguida de mayuscula sin espacio
@@ -109,9 +107,7 @@ bool esTituloValido(const string& t) {
     return false;
 }
 
-// ─────────────────────────────────────────────────────────────
 //  CARGA DEL CSV + CONSTRUCCION DEL INDICE
-// ─────────────────────────────────────────────────────────────
 bool cargarCSV(const string& archivo) {
     ifstream file(archivo);
     if (!file.is_open()) {
@@ -185,7 +181,7 @@ bool cargarCSV(const string& archivo) {
     return true;
 }
 
-// palabras tan comunes que matchean en casi todo → ignorar en el query
+// palabras tan comunes que matchean en casi todo
 const unordered_set<string> STOP_WORDS = {
     "the","a","an","at","in","of","to","is","it","he","she","his","her",
     "and","or","on","by","be","as","we","do","if","so","up","no","me",
@@ -194,11 +190,9 @@ const unordered_set<string> STOP_WORDS = {
     "than","had","has","have","been","who","what","when","where","how"
 };
 
-// ─────────────────────────────────────────────────────────────
 //  BUSQUEDA
 //  rankea por cantidad de tokens que coinciden,
 //  titulo primero, luego otros campos
-// ─────────────────────────────────────────────────────────────
 vector<int> buscar(const string& query) {
     vector<string> tokens = preprocesar(query);
     if (tokens.empty()) return {};
@@ -250,9 +244,7 @@ vector<int> buscar(const string& query) {
     return resultado;
 }
 
-// ─────────────────────────────────────────────────────────────
 //  INTERFAZ
-// ─────────────────────────────────────────────────────────────
 void mostrarDetalle(int id) {
     const Movie& m = movies[id];
     cout << "\n  Titulo:   " << m.title << "\n";
@@ -271,12 +263,13 @@ void mostrarResultados(const vector<int>& ids) {
 }
 
 int main(int argc, char* argv[]) {
-    string exeDir = string(argv[0]).substr(0, string(argv[0]).rfind('/'));
+    string exePath = string(argv[0]);
+    size_t pos = exePath.find_last_of("/\\");
+    string exeDir = (pos != string::npos) ? exePath.substr(0, pos) : ".";
     string archivo = (argc > 1) ? argv[1] : exeDir + "/../wiki_movie_plots_deduped.csv";
 
     cout << "=== Streaming Platform ===\n";
     if (!cargarCSV(archivo)) return 1;
-
     string query;
     while (true) {
         cout << "\nBuscar (0 para salir): ";

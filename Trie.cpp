@@ -3,14 +3,11 @@
 #include <unordered_set>
 
 using namespace std;
-
-// ── Nodo del árbol ────────────────────────────────────────────
 struct TrieNode {
     unordered_map<char, TrieNode*> children;
     unordered_set<int> movieIds;   // peliculas que contienen este substring
 };
 
-// ── Suffix Trie ───────────────────────────────────────────────
 // Inserta todos los sufijos de cada palabra para permitir
 // busqueda de substrings: "bar" encuentra "barco", "embarcar", etc.
 class SuffixTrie {
