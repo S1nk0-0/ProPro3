@@ -12,8 +12,8 @@
 using namespace std;
 
 struct Movie {
-    int id;
-    int releaseYear;
+    int id = -1;
+    int releaseYear = 0;
     string title;
     string origin;
     string cast;
@@ -42,8 +42,8 @@ vector<string> preprocesar(const string& texto) {
     string actual;
 
     for (char c : texto) {
-        if (isalnum(c)) {
-            actual += tolower(c);
+        if (isalnum((unsigned char)c)) {
+            actual += tolower((unsigned char)c);
         } else if (!actual.empty()) {
             if (actual.size() > 1) tokens.push_back(actual);
             actual.clear();
@@ -110,8 +110,8 @@ bool esTituloValido(const string& t) {
             return false;
     // primer caracter no-espacio debe ser mayuscula o digito
     for (char c : t)
-        if (!isspace(c))
-            return isupper(c) || isdigit(c);
+        if (!isspace((unsigned char)c))
+            return isupper((unsigned char)c) || isdigit((unsigned char)c);
     return false;
 }
 
@@ -233,7 +233,7 @@ bool cargarCSV(const string& archivo) {
     // (sin memoria compartida) y al final se fusionan en los tries
     // globales, evitando condiciones de carrera.
     unsigned nHilos = max(1u, thread::hardware_concurrency());
-    nHilos = (unsigned)min<size_t>(nHilos, movies.size());
+    nHilos = (unsigned)min<size_t>(nHilos, max<size_t>(1, movies.size()));
     size_t total = movies.size();
     size_t porHilo = (total + nHilos - 1) / nHilos;
 
@@ -456,10 +456,15 @@ private:
     unordered_set<int> likesSet, verMasTardeSet;
     vector<function<void(int)>> observadoresLike;
 
+    // descarta ids invalidos (archivo editado a mano o dataset distinto)
     static void cargar(vector<int>& ids, unordered_set<int>& idsSet, const string& archivo) {
         ifstream f(archivo);
         int id;
-        while (f >> id) if (!idsSet.count(id)) { idsSet.insert(id); ids.push_back(id); }
+        while (f >> id)
+            if (id >= 0 && id < (int)movies.size() && !idsSet.count(id)) {
+                idsSet.insert(id);
+                ids.push_back(id);
+            }
     }
     static void guardar(const vector<int>& ids, const string& archivo) {
         ofstream f(archivo, ios::trunc);

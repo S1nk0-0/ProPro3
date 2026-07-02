@@ -12,6 +12,10 @@ template <typename T>
 struct TrieNode {
     unordered_map<char, TrieNode<T>*> children;
     unordered_set<T> values;   // valores que contienen este substring
+
+    ~TrieNode() {
+        for (auto& par : children) delete par.second;
+    }
 };
 
 // ── Suffix Trie genérico ───────────────────────────────────────
@@ -32,19 +36,29 @@ private:
         }
     }
 
+    // si dst no tiene la rama, se roba el subarbol entero de src (mover
+    // punteros, sin copiar nodos); si ya existe, se unen los valores y
+    // se sigue bajando
     static void mergeNode(TrieNode<T>* dst, TrieNode<T>* src) {
         for (auto& par : src->children) {
-            char c = par.first;
-            TrieNode<T>* srcChild = par.second;
-            if (!dst->children.count(c)) dst->children[c] = new TrieNode<T>();
-            TrieNode<T>* dstChild = dst->children[c];
-            dstChild->values.insert(srcChild->values.begin(), srcChild->values.end());
-            mergeNode(dstChild, srcChild);
+            auto it = dst->children.find(par.first);
+            if (it == dst->children.end()) {
+                dst->children[par.first] = par.second;
+                par.second = nullptr;   // dst es el nuevo dueño del subarbol
+            } else {
+                it->second->values.insert(par.second->values.begin(), par.second->values.end());
+                mergeNode(it->second, par.second);
+            }
         }
     }
 
 public:
     SuffixTrie() { root = new TrieNode<T>(); }
+    ~SuffixTrie() { delete root; }
+
+    // evita copias accidentales (dos tries apuntando a los mismos nodos)
+    SuffixTrie(const SuffixTrie&) = delete;
+    SuffixTrie& operator=(const SuffixTrie&) = delete;
 
     // inserta "barco" → llama insertString con "barco","arco","rco","co","o"
     void indexWord(const string& word, const T& value) {

@@ -92,7 +92,7 @@ En `main.cpp` se instancian 5 tries: uno general (`trie`), uno solo de títulos 
 
 La carga del CSV se hace en dos etapas:
 1. **Lectura y parseo del CSV** (secuencial, un solo hilo): se lee el archivo línea por línea y se construye el `vector<Movie>`.
-2. **Indexación** (paralela): el vector de películas se reparte en `N` bloques, donde `N = std::thread::hardware_concurrency()`. Cada hilo (`indexarRango`) construye sus propios tries **locales** (sin memoria compartida con otros hilos), evitando así condiciones de carrera. Al terminar todos los hilos, se fusionan los tries locales dentro de los tries globales con `SuffixTrie::merge`.
+2. **Indexación** (paralela): el vector de películas se reparte en `N` bloques, donde `N = std::thread::hardware_concurrency()`. Cada hilo (`indexarRango`) construye sus propios tries **locales** (sin memoria compartida con otros hilos), evitando así condiciones de carrera. Al terminar todos los hilos, se fusionan los tries locales dentro de los tries globales con `SuffixTrie::merge` (las ramas que no existen en el trie global se **mueven** como punteros, sin copiar nodos, para no duplicar memoria).
 
 ```cpp
 vector<thread> hilos;
@@ -112,9 +112,9 @@ for (unsigned t = 0; t < nHilos; t++) {
 
 | Modo                          | Tiempo total (carga + indexación) |
 |-------------------------------|:----------------------------------:|
-| Secuencial (1 hilo)           | 38.4 s                              |
-| Paralelo (14 hilos)           | 11.6 s                              |
-| **Speedup**                   | **~3.3x**                          |
+| Secuencial (1 hilo)           | 32.6 s                              |
+| Paralelo (14 hilos)           | 15.6 s                              |
+| **Speedup**                   | **~2.1x**                          |
 
 El speedup no es lineal con el número de núcleos porque la lectura/parseo del CSV (paso 1) sigue siendo secuencial y porque el paso final de `merge` también es secuencial (Amdahl's law); aun así, la etapa de indexación —la más costosa— se paraleliza completamente.
 
