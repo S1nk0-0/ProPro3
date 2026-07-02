@@ -8,6 +8,7 @@
 #include <thread>
 #include <memory>
 #include <functional>
+#include <filesystem>
 #include "Trie.cpp"
 using namespace std;
 
@@ -534,7 +535,7 @@ void mostrarResultadosPaginados(const vector<int>& ids) {
         size_t hasta = min(ids.size(), offset + pagina);
         for (size_t i = offset; i < hasta; i++) {
             const Movie& m = movies[ids[i]];
-            cout << "[" << (i - offset) + 1 << "] " << m.title << " (" << m.releaseYear << ")\n";
+            cout << "[" << i + 1 << "] " << m.title << " (" << m.releaseYear << ")\n";
         }
 
         cout << "\n  Numero = ver detalle";
@@ -548,7 +549,7 @@ void mostrarResultadosPaginados(const vector<int>& ids) {
 
         try {
             int sel = stoi(op);
-            if (sel >= 1 && (size_t)sel <= hasta - offset) { menuDetalle(ids[offset + sel - 1]); continue; }
+            if (sel > (int)offset && sel <= (int)hasta) { menuDetalle(ids[sel - 1]); continue; }
         } catch (...) {}
         cout << "Opcion invalida.\n";
     }
@@ -614,8 +615,8 @@ void menuPrincipal() {
 }
 
 int main(int argc, char* argv[]) {
-    string exeDir = string(argv[0]).substr(0, string(argv[0]).rfind('/'));
-    string archivo = (argc > 1) ? argv[1] : exeDir + "/../wiki_movie_plots_deduped.csv";
+    std::filesystem::path exeDir = std::filesystem::path(argv[0]).parent_path();
+    string archivo = (argc > 1) ? argv[1] : (exeDir / ".." / "wiki_movie_plots_deduped.csv").string();
 
     cout << "=== Streaming Platform ===\n";
     if (!cargarCSV(archivo)) return 1;
