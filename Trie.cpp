@@ -7,7 +7,7 @@ using namespace std;
 template <typename T>
 struct TrieNode {
     unordered_map<char, TrieNode<T>*> children;
-    unordered_set<T> values;   // valores que contienen este substring
+    unordered_set<T> values;
 
     ~TrieNode() {
         for (auto& par : children) delete par.second;
@@ -26,7 +26,7 @@ private:
             if (!cur->children.count(c))
                 cur->children[c] = new TrieNode<T>();
             cur = cur->children[c];
-            cur->values.insert(value);  // guarda el valor en CADA nodo del camino
+            cur->values.insert(value);
         }
     }
 
@@ -35,7 +35,7 @@ private:
             auto it = dst->children.find(par.first);
             if (it == dst->children.end()) {
                 dst->children[par.first] = par.second;
-                par.second = nullptr;   // dst es el nuevo dueño del subarbol
+                par.second = nullptr;
             } else {
                 it->second->values.insert(par.second->values.begin(), par.second->values.end());
                 mergeNode(it->second, par.second);
