@@ -25,19 +25,13 @@ struct Movie {
 };
 
 vector<Movie> movies;
-SuffixTrie<int> trie;           // todos los campos
-SuffixTrie<int> titleTrie;      // solo titulos (substrings)
-SuffixTrie<int> directorTrie;   // solo director (para busqueda por tag)
-SuffixTrie<int> castTrie;       // solo cast (para busqueda por tag)
-SuffixTrie<int> genreTrie;      // solo genero (para busqueda por tag)
-unordered_map<string, unordered_set<int>> wordTitleIndex; // palabra exacta → IDs
+SuffixTrie<int> trie;
+SuffixTrie<int> titleTrie;
+SuffixTrie<int> directorTrie;
+SuffixTrie<int> castTrie;
+SuffixTrie<int> genreTrie;
+unordered_map<string, unordered_set<int>> wordTitleIndex;
 
-/*
-=====================================================================
-    PRE-PROCESAMIENTO: eliminamos los chars que no nos sirven y
-                       separamos las palabras en un vector
-=====================================================================
-*/
 vector<string> preprocesar(const string& texto) {
     vector<string> tokens;
     string actual;
@@ -54,10 +48,6 @@ vector<string> preprocesar(const string& texto) {
     return tokens;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  PARA LEER BIEN EL CSV
-//  maneja campos entre comillas con comas y saltos de linea
-// ─────────────────────────────────────────────────────────────
 vector<string> revisarCSV(const string& linea) {
     vector<string> campos;
     string campo;
@@ -78,14 +68,12 @@ vector<string> revisarCSV(const string& linea) {
     return campos;
 }
 
-// lee una fila completa del CSV aunque el plot tenga saltos de linea
-// maneja comillas escapadas ("") para no unir filas por error
 bool leerFilaCSV(ifstream& file, string& linea) {
     if (!getline(file, linea)) return false;
     bool inQuotes = false;
     for (size_t i = 0; i < linea.size(); i++) {
         if (linea[i] == '"') {
-            if (i + 1 < linea.size() && linea[i+1] == '"') i++; // "" = comilla literal
+            if (i + 1 < linea.size() && linea[i+1] == '"') i++;
             else inQuotes = !inQuotes;
         }
     }
@@ -105,20 +93,15 @@ bool leerFilaCSV(ifstream& file, string& linea) {
 
 bool esTituloValido(const string& t) {
     if (t.empty() || t.size() > 150) return false;
-    // detectar concatenaciones tipo "TheThe": minuscula seguida de mayuscula sin espacio
     for (size_t i = 1; i < t.size(); i++)
         if (islower((unsigned char)t[i-1]) && isupper((unsigned char)t[i]))
             return false;
-    // primer caracter no-espacio debe ser mayuscula o digito
     for (char c : t)
         if (!isspace((unsigned char)c))
             return isupper((unsigned char)c) || isdigit((unsigned char)c);
     return false;
 }
 
-// ── Patrón de diseño: Factory Method ──────────────────────────
-// Encapsula la construcción/validación de un Movie a partir de una fila
-// cruda del CSV. Devuelve ok=false si la fila debe descartarse.
 Movie crearPelicula(int id, const vector<string>& c,
                      int iTitle, int iPlot, int iGenre, int iDirector,
                      int iCast, int iOrigin, int iWikiPage, int iReleaseYear,
@@ -143,9 +126,6 @@ Movie crearPelicula(int id, const vector<string>& c,
     return m;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  INDEXACION (usada tanto en secuencial como en paralelo)
-// ─────────────────────────────────────────────────────────────
 void indexarRango(size_t desde, size_t hasta,
                    SuffixTrie<int>& trieOut, SuffixTrie<int>& titleOut,
                    SuffixTrie<int>& directorOut, SuffixTrie<int>& castOut,
@@ -158,9 +138,8 @@ void indexarRango(size_t desde, size_t hasta,
         for (const string& tok : preprocesar(m.title)) {
             trieOut.indexWord(tok, id);
             titleOut.indexWord(tok, id);
-            wordTitleOut[tok].insert(id);  // palabra exacta del titulo
+            wordTitleOut[tok].insert(id);
         }
-        // solo indexamos palabras cortas del plot para no saturar el trie
         for (const string& tok : preprocesar(m.plot))
             if (tok.size() <= 12) trieOut.indexWord(tok, id);
         for (const string& tok : preprocesar(m.genre)) {
@@ -178,9 +157,6 @@ void indexarRango(size_t desde, size_t hasta,
     }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  CARGA DEL CSV + CONSTRUCCION DEL INDICE (en paralelo)
-// ─────────────────────────────────────────────────────────────
 bool cargarCSV(const string& archivo) {
     ifstream file(archivo);
     if (!file.is_open()) {
@@ -228,11 +204,6 @@ bool cargarCSV(const string& archivo) {
     }
     cout << movies.size() << " peliculas cargadas.        \n";
 
-    // ── Programación Paralela ──────────────────────────────────
-    // Se reparte el vector de peliculas en N bloques (N = nucleos
-    // disponibles). Cada hilo construye sus propios tries locales
-    // (sin memoria compartida) y al final se fusionan en los tries
-    // globales, evitando condiciones de carrera.
     unsigned nHilos = max(1u, thread::hardware_concurrency());
     nHilos = (unsigned)min<size_t>(nHilos, max<size_t>(1, movies.size()));
     size_t total = movies.size();
@@ -276,9 +247,6 @@ const unordered_set<string> STOP_WORDS = {
     "than","had","has","have","been","who","what","when","where","how"
 };
 
-// ── Patrón de diseño: Strategy ─────────────────────────────────
-// Encapsula el algoritmo de ranking, para poder cambiarlo sin tocar
-// el codigo que arma los conteos de coincidencias (buscar()).
 struct IEstrategiaRanking {
     virtual ~IEstrategiaRanking() = default;
     virtual vector<int> rankear(const unordered_map<int,int>& exactTitle,
@@ -321,22 +289,18 @@ struct RankingPorCobertura : IEstrategiaRanking {
 
 unique_ptr<IEstrategiaRanking> estrategiaRanking = make_unique<RankingPorCobertura>();
 
-// ─────────────────────────────────────────────────────────────
-//  BUSQUEDA (por texto libre, en titulo/sinopsis/genero/director/cast)
-// ─────────────────────────────────────────────────────────────
 vector<int> buscar(const string& query) {
     vector<string> tokens = preprocesar(query);
     if (tokens.empty()) return {};
 
-    // filtrar stop words, pero solo si quedan tokens utiles
     vector<string> filtrados;
     for (const string& t : tokens)
         if (!STOP_WORDS.count(t)) filtrados.push_back(t);
     if (!filtrados.empty()) tokens = filtrados;
 
-    unordered_map<int, int> exactTitle;   // tokens que son palabras exactas del titulo
-    unordered_map<int, int> substrTitle;  // tokens que aparecen como substring en titulo
-    unordered_map<int, int> anyField;     // tokens que aparecen en cualquier campo
+    unordered_map<int, int> exactTitle;
+    unordered_map<int, int> substrTitle;
+    unordered_map<int, int> anyField;
 
     for (const string& tok : tokens) {
         auto it = wordTitleIndex.find(tok);
@@ -349,9 +313,6 @@ vector<int> buscar(const string& query) {
     return estrategiaRanking->rankear(exactTitle, substrTitle, anyField, (int)tokens.size(), query);
 }
 
-// ─────────────────────────────────────────────────────────────
-//  BUSQUEDA POR TAG (director / genero / cast)
-// ─────────────────────────────────────────────────────────────
 enum class Tag { DIRECTOR, GENERO, CAST };
 
 vector<int> buscarPorTag(Tag campo, const string& valor) {
@@ -375,10 +336,6 @@ vector<int> buscarPorTag(Tag campo, const string& valor) {
     return resultado;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  PELICULAS SIMILARES (algoritmo propio: similitud de Jaccard
-//  sobre genero + director + cast tokenizados)
-// ─────────────────────────────────────────────────────────────
 unordered_set<string> tagTokens(const Movie& m) {
     unordered_set<string> tokens;
     for (auto& t : preprocesar(m.genre)) tokens.insert(t);
@@ -412,11 +369,6 @@ vector<int> similares(int movieId, int topN = 10) {
     return resultado;
 }
 
-// ── Patrón de diseño: Singleton + Observer ─────────────────────
-// Sesion guarda el estado del usuario (likes / ver mas tarde) y persiste
-// en disco. Es unica durante la ejecucion (Singleton). Cuando se agrega
-// un Like, notifica a los observadores registrados (Observer) para que,
-// por ejemplo, se recalculen las recomendaciones.
 class Sesion {
 public:
     static Sesion& instancia() {
@@ -457,7 +409,6 @@ private:
     unordered_set<int> likesSet, verMasTardeSet;
     vector<function<void(int)>> observadoresLike;
 
-    // descarta ids invalidos (archivo editado a mano o dataset distinto)
     static void cargar(vector<int>& ids, unordered_set<int>& idsSet, const string& archivo) {
         ifstream f(archivo);
         int id;
@@ -473,9 +424,6 @@ private:
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-//  RECOMENDACIONES (cache que se recalcula via Observer)
-// ─────────────────────────────────────────────────────────────
 vector<int> recomendaciones;
 
 void recalcularRecomendaciones(int) {
@@ -499,9 +447,6 @@ void recalcularRecomendaciones(int) {
     for (auto& par : ordenado) recomendaciones.push_back(par.second);
 }
 
-// ─────────────────────────────────────────────────────────────
-//  INTERFAZ
-// ─────────────────────────────────────────────────────────────
 void mostrarDetalle(int id) {
     const Movie& m = movies[id];
     cout << "\n  Titulo:   " << m.title << "\n";
@@ -525,7 +470,6 @@ void menuDetalle(int id) {
     }
 }
 
-// Muestra resultados de 5 en 5, con opcion de ver 5 mas o abrir el detalle
 void mostrarResultadosPaginados(const vector<int>& ids) {
     if (ids.empty()) { cout << "Sin resultados.\n"; return; }
 
