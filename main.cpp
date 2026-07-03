@@ -238,7 +238,6 @@ bool cargarCSV(const string& archivo) {
     return true;
 }
 
-// palabras tan comunes que matchean en casi todo → ignorar en el query
 const unordered_set<string> STOP_WORDS = {
     "the","a","an","at","in","of","to","is","it","he","she","his","her",
     "and","or","on","by","be","as","we","do","if","so","up","no","me",
